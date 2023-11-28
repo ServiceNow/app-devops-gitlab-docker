@@ -1,0 +1,25 @@
+'use strict';
+
+const Base = require('./base');
+
+const ChangeRequest  = require('./entity/changeRequest')
+const Package = require('./entity/package')
+const Artifact = require('./entity/artifact');
+
+module.exports = class Create extends Base{
+  
+  constructor(program) {
+
+    super();
+
+    const createCommand = program.command('create');
+
+    new ChangeRequest().create(createCommand);
+    new Package().create(createCommand);
+    new Artifact().create(createCommand);
+
+  }
+
+
+  
+}
