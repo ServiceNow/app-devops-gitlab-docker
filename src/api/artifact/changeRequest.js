@@ -56,7 +56,7 @@ class ChangeRequestManager extends SnDevopsApi {
                         interval = changeStepDetails.interval;
                     } 
                 } catch (e) {
-                    throw new Error("Change cannot be created because error occured during parsing of changeRequestDetails.");
+                    throw new Error("Change request cannot be created because changeRequestDetails were not parsed.");
                 }
             }
 
@@ -106,23 +106,23 @@ class ChangeRequestManager extends SnDevopsApi {
                 }
         
                 if (err.message.includes('ECONNREFUSED') || err.message.includes('ENOTFOUND')) {
-                    throw new Error('Invalid ServiceNow Instance URL. Please correct the URL and try again.');
+                    throw new Error('Change request cannot be created because the ServiceNow Instance URL is invalid. Enter the correct URL and try again.');
                 }
         
                 if (err.message.includes('401')) {
-                    throw new Error('Invalid Credentials. Please correct the credentials and try again.');
+                    throw new Error('The SNOW_TOKEN and SNOW_TOOLID are incorrect. Verify that the GitLab project level variables are configured.');
                 }
         
                 if (err.message.includes('405')) {
-                    throw new Error('Response Code from ServiceNow is 405. Please correct ServiceNow logs for more details.');
+                    throw new Error('Change request cannot be created because response Code from ServiceNow is 405. Please check ServiceNow logs for more details.');
                 }
         
                 if (!err.response) {
-                    throw new Error('No response from ServiceNow. Please check ServiceNow logs for more details.');
+                    throw new Error('Change request cannot be created because no response from ServiceNow. Please check ServiceNow logs for more details.');
                 }
         
                 if (err.response.status == 500) {
-                    throw new Error('Response Code from ServiceNow is 500. Please check ServiceNow logs for more details.')
+                    throw new Error('Change request cannot be created because response Code from ServiceNow is 500. Please check ServiceNow logs for more details.')
                 }
         
                 if (err.response.status == 400) {
@@ -173,7 +173,7 @@ class ChangeRequestManager extends SnDevopsApi {
               }
       
               if (error.message == "401") {
-                throw new Error(`The user credentials are incorrect.`);
+                throw new Error(`The SNOW_TOKEN and SNOW_TOOLID are incorrect. Verify that the GitLab project level variables are configured.`);
               }
       
               if (error.message == "403") {
@@ -367,7 +367,7 @@ class ChangeRequestManager extends SnDevopsApi {
     validateChangePayload(changePayload) {
       for (var key in changePayload) {
         if (changePayload.hasOwnProperty(key) && !changePayload[key]) {
-           throw new Error(`Change cannot be created as Key: ${key} has a null value.`);
+           throw new Error(`Change request cannot be created as Key: ${key} has a null value.`);
         }
       }
     }

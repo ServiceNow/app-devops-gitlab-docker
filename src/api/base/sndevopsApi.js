@@ -16,12 +16,12 @@ class SndevopsApi {
 
     validateMandatoryParams(url, token, toolId) {
         var errorMessage;
-        if(!url) errorMessage = "URL is mandatory.";
-        if(!token) errorMessage += "Token is mandatory.";
-        if(!toolId) errorMessage += "ToolId is mandatory.";
+        if(!url) errorMessage = "SNOW_URL is a required field.";
+        if(!token) errorMessage += "SNOW_TOKEN is a required field.";
+        if(!toolId) errorMessage += "SNOW_TOOLID is a required field.";
 
         if(errorMessage) {
-            errorMessage += " Please check GitLab project level environmental variables.";
+            errorMessage += " Verify that the GitLab project level variables are configured.";
             console.error('\n \x1b[1m\x1b[31m' + errorMessage + '\x1b[0m\x1b[0m');
             process.exit(1);
         }

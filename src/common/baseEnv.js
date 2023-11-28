@@ -12,6 +12,7 @@ module.exports = class BaseEnv{
         static CI_PAGES_URL = process.env.CI_PAGES_URL;
         static CI_PROJECT_TITLE = process.env.CI_PROJECT_TITLE;
         static CI_PROJECT_PATH = process.env.CI_PROJECT_PATH;
+        static CI_PIPELINE_URL = process.env.CI_PROJECT_PATH;
         static CI_COMMIT_BRANCH = process.env.CI_COMMIT_BRANCH;
         static CI_API_V4_URL = process.env.CI_API_V4_URL;
         static CI_PIPELINE_SOURCE = process.env.CI_PIPELINE_SOURCE;
