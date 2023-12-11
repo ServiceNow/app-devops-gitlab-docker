@@ -5,6 +5,7 @@ const Base = require('./base');
 const ChangeRequest  = require('./entity/changeRequest')
 const Package = require('./entity/package')
 const Artifact = require('./entity/artifact');
+const SonarRegistration = require('./entity/sonarRegistration');
 
 module.exports = class Create extends Base{
   
@@ -17,9 +18,7 @@ module.exports = class Create extends Base{
     new ChangeRequest().create(createCommand);
     new Package().create(createCommand);
     new Artifact().create(createCommand);
-
+    new SonarRegistration().create(createCommand);
   }
-
-
   
 }

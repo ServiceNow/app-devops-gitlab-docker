@@ -38,8 +38,7 @@ class ChangeRequestManager extends SnDevopsApi {
                 "projectId": BaseEnv.CI_PROJECT_ID,
                 "jobId": BaseEnv.CI_JOB_ID,
                 "pipelineName": BaseEnv.CI_PROJECT_TITLE,
-                "jobName": BaseEnv.CI_JOB_NAME,
-                "branchName": BaseEnv.CI_COMMIT_BRANCH
+                "jobName": BaseEnv.CI_JOB_NAME
             };
 
             //ChangeAttributes are optional
@@ -147,12 +146,15 @@ class ChangeRequestManager extends SnDevopsApi {
                     }
                     throw new Error(errMsg);
                 }
-                
-                if(status) {
-                    var result = response.data.result;
-                    if (result && result.status ==="Success" && result.changeControl) {
-                        console.log('\n     \x1b[1m\x1b[36m' + 'Change created successfully.' + '\x1b[0m\x1b[0m');
-                    }
+            }
+
+            if(status) {
+                var result = response.data.result;
+                if (result && result.status == "Success") {
+                    if(result.message)
+                        console.log('\n     \x1b[1m\x1b[36m' + result.message + '\x1b[0m\x1b[0m');
+                    else
+                        console.log('\n     \x1b[1m\x1b[36m' + "The job is under change control. A callback request is created and polling has been started to retrieve the change info." + '\x1b[0m\x1b[0m');
                 }
             }
         } catch(error) {
@@ -348,13 +350,14 @@ class ChangeRequestManager extends SnDevopsApi {
     
     _getRequestBodyForChangeCreation(changePayload) {
         this.validateChangePayload(changePayload);
+        let branchName = this.fetchBranchName();
         return {
             "toolId": this.toolId,
             "stageName": changePayload.jobName,
             "buildNumber": changePayload.buildNumber,
             "callbackURL": changePayload.apiPath + "/projects/" + changePayload.projectId +"/jobs/" + changePayload.jobId,
-            "isMultiBranch": "false",
-            "branchName": changePayload.branchName,
+            "isMultiBranch": "true",
+            "branchName": branchName,
             "changeRequestDetails": changePayload.changeRequestDetails,
             "action": "customChange",
             "pipelineName": changePayload.pipelineName,
