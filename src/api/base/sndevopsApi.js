@@ -70,7 +70,14 @@ class SndevopsApi {
             });;
     }
 
+    fetchBranchName() {
+        let branchName = BaseEnv.CI_COMMIT_BRANCH || BaseEnv.CI_DEFAULT_BRANCH;
+        if(BaseEnv.CI_PIPELINE_SOURCE == 'merge_request_event')
+           branchName = BaseEnv.CI_MERGE_REQUEST_SOURCE_BRANCH_NAME;
 
+        return branchName;
+    }
+    
 }
 
 module.exports = SndevopsApi

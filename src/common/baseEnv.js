@@ -20,6 +20,8 @@ module.exports = class BaseEnv{
         static SNOW_URL = process.env.SNOW_URL;
         static SNOW_TOKEN = process.env.SNOW_TOKEN;
         static SNOW_TOOLID = process.env.SNOW_TOOLID;
+        static CI_DEFAULT_BRANCH = process.env.CI_DEFAULT_BRANCH;
+        static CI_MERGE_REQUEST_SOURCE_BRANCH_NAME = process.env.CI_MERGE_REQUEST_SOURCE_BRANCH_NAME;
 
     static getEnv(envVariableName){
         return process.env[envVariableName];

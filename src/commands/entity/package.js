@@ -1,5 +1,5 @@
 const Base = require("../base");
-const ArtifactManager = require("../../api/artifact/artifactManager")
+const PackageManager = require("../../api/package/packageManager")
 const COMMAND_NAME = 'package'
 
 module.exports = class Package extends Base {
@@ -14,7 +14,7 @@ module.exports = class Package extends Base {
 
         command.action((options) => {
             console.log("Create Artifacts action called " )
-            new ArtifactManager(options.url,options.token,options.toolId).createPackage(options.name, options.artifacts)
+            new PackageManager(options.url,options.token,options.toolId).createPackage(options.name, options.artifacts)
             
         })
     }
