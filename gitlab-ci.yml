@@ -1,0 +1,36 @@
+image: servicenowdocker/sndevops-cli:0.01
+stages:
+  - pre-build
+  - build
+  - sonar
+  - changeapproval
+  - deploy
+
+
+Pre-Build:
+  stage: pre-build
+  script:
+    - echo $CI_JOB_NAME
+    
+Artifact and Package:
+  stage: build
+  script:
+    - sndevopscli create artifact -a "[{\"name\":\"Artifact-${CI_JOB_NAME}\",\"repositoryName\":\"TestRepo\",\"version\":\"1.${CI_RUNNER_ID}.0\"}]"
+    - sndevopscli create package -n "Test_Package" -a "[{\"name\":\"Artifact-${CI_JOB_NAME}\",\"repositoryName\":\"TestRepo\",\"version\":\"1.${CI_RUNNER_ID}.0\"}]"
+
+
+ServiceNow DevOps SonarScan Results:
+  stage: sonar
+  script:
+    - sndevopscli create sonar -url 'https://sonarcloud.io' -projectKey 'xxxxxxx'
+
+ServiceNow DevOps Change Step:
+  stage: changeapproval
+  script: 
+     - sndevopscli create change -p '{"changeStepDetails":{"timeout":3600,"interval":100},"attributes":{"short_description":"Automated Software Deployment","description":"Automated Software Deployment.","assignment_group":"xxxxxx","implementation_plan":"Software update is tested and results can be found in Test Summaries Tab.","backout_plan":"When software fails in production, the previous software release will be re-deployed.","test_plan":"Testing if the software was successfully deployed or not"}}'
+     
+Deploy Job:
+  stage: deploy
+  script:
+    - echo $CI_JOB_NAME
+

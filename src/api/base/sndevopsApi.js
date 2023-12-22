@@ -50,6 +50,7 @@ class SndevopsApi {
     _getAuthHeaderWithToken(){
         return {
             "Authorization": "sn_devops.DevOpsToken " + this.toolId + ":" + this.token,
+            'Accept': 'application/json',
             "Content-Type": "application/json"
         }
     }
