@@ -38,7 +38,8 @@ class ChangeRequestManager extends SnDevopsApi {
                 "projectId": BaseEnv.CI_PROJECT_ID,
                 "jobId": BaseEnv.CI_JOB_ID,
                 "pipelineName": BaseEnv.CI_PROJECT_TITLE,
-                "jobName": BaseEnv.CI_JOB_NAME
+                "jobName": BaseEnv.CI_JOB_NAME,
+                "projectPath": BaseEnv.CI_PROJECT_PATH
             };
 
             //ChangeAttributes are optional
@@ -363,7 +364,8 @@ class ChangeRequestManager extends SnDevopsApi {
             "pipelineName": changePayload.pipelineName,
             "jobId": changePayload.jobId,
             "gitLabProjectId" : changePayload.projectId,
-            "pipelineId": changePayload.buildNumber
+            "pipelineId": changePayload.buildNumber,
+            "projectPath": changePayload.projectPath
         }
     }
 

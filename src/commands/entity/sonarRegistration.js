@@ -13,8 +13,8 @@ module.exports = class SonarRegistration extends Base {
         const command = createCommand.command(COMMAND_NAME);
         this.addDefaultOptions(command);
 
-        command.requiredOption('-sonarProjectKey, --sonarProjectKey <sonarProjectKey>', 'Sonar Project Key')
-        .requiredOption('-sonarUrl, --sonarUrl <sonarUrl>', 'Sonar URL');
+        command.requiredOption('-projectKey, --sonarProjectKey <sonarProjectKey>', 'Sonar Project Key')
+        .requiredOption('-url, --sonarUrl <sonarUrl>', 'Sonar URL');
 
         command.action((options) => {
             console.log("Sonar registartion action called " )

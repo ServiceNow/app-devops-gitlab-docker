@@ -13,7 +13,7 @@ module.exports = class Package extends Base {
         .requiredOption('-n, --name <name>', 'package name ');
 
         command.action((options) => {
-            console.log("Create Artifacts action called " )
+            console.log("Create Package action called " )
             new PackageManager(options.url,options.token,options.toolId).createPackage(options.name, options.artifacts)
             
         })
