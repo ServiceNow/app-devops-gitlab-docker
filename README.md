@@ -1,4 +1,4 @@
-# app-devops-gitlab
+# app-devops-gitlab-docker
 
  New repository for developing a plugin to integrate between ITSM DevOps and GitLab pipelines
 
@@ -65,11 +65,11 @@ npm unlink .
 ### Building Docker Image
 
 ```sh
-docker build -t servicenowdocker/sndevops-cli:0.01 .
+docker build -t servicenowdocker/sndevops:3.1 .
 ```
 
 ```sh
-docker push servicenowdocker/sndevops-cli:0.01
+docker push servicenowdocker/sndevops:3.1
 ```
 
 ## Integrating with GitLab
@@ -95,7 +95,7 @@ stages:
 
 package:
   stage: package
-  image: servicenowdocker/sndevops-cli:0.01
+  image: servicenowdocker/sndevops:3.1
   script: 
     - sndevopscli create artifact -a '[{"name":"artifact-name-$CI_JOB_ID","repositoryName":"artifact-repo-name" ,"version":"1.3.0"}]'
     - sndevopscli create package -n "package-name" -a '[{"name":"artifact-name-$CI_JOB_ID","repositoryName":"artifact-repo-name" ,"version":"1.3.0"}]
@@ -107,7 +107,7 @@ stages:
 
 package:
   stage: package
-  image: servicenowdocker/sndevops-cli:0.01
+  image: servicenowdocker/sndevops:3.1
   script: 
     - sndevopscli create artifact -u <serviceno-url> -t <tool-id> --token <tool-token> -a '[{"name":"artifact-name-$CI_JOB_ID","repositoryName":"artifact-repo-name" ,"version":"1.3.0"}]'
     - sndevopscli create package -u <serviceno-url> -t <tool-id> --token <tool-token> -n "package-mame" -a '[{"name":"artifact-name-$CI_JOB_ID","repositoryName":"artifact-repo-name" ,"version":"1.3.0"}]
@@ -131,7 +131,7 @@ stages:
 
 ServiceNow DevOps Change:
   stage: DevOpsChangeApproval
-  image: servicenowdocker/sndevops-cli:0.01
+  image: servicenowdocker/sndevops:3.1
   script: 
     - sndevopscli create change -p '{"changeStepDetails":{"timeout":3600,"interval":100},"attributes":{"short_description":"Automated Software Deployment","description":"Automated Software Deployment.","assignment_group":"XXXXXXX","implementation_plan":"Software update is tested and results can be found in Test Summaries Tab.","backout_plan":"When software fails in production, the previous software release will be re-deployed.","test_plan":"Testing if the software was successfully deployed or not"}}'
 
@@ -161,7 +161,7 @@ stages:
 
 ServiceNow DevOps Sonar Scan Results:
   stage: DevOpsSonarStage
-  image: servicenowdocker/sndevops-cli:0.01
+  image: servicenowdocker/sndevops:3.1
   script: 
     - sndevopscli create sonar -url 'https://sonarcloud.io' -projectKey 'xxxxxxx'
 
