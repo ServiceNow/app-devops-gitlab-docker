@@ -173,3 +173,84 @@ This specifies the sonar project key.
 
 ```
 
+**Example of get change for ServiceNow via commandline**
+```yaml
+
+This custom step needs to be added at job level to get changeRequestNumber from ServiceNow instance with provided changeDetails to identify the change-request.
+
+stages:
+  - DevOpsGetChange
+
+ServiceNow DevOps Get Change:
+  stage: DevOpsGetChange
+  image: servicenowdocker/sndevops:4.0.0
+  script: 
+    - sndevopscli get change -p "{\"buildNumber\":${CHG_JOB_ID},\"stageName\":\"ServiceNow DevOps Change Step\",\"pipelineName\":\"GitlabDockerGetAndUpdateChange\"}"
+
+-p: It stands for changeDetails. The change details to be used for identifying change request in ServiceNow instance. The change details is a JSON object surrounded by curly braces {} containing key-value pair separated by a comma ,. A key-value pair consists of a key and a value separated by a colon :. The keys supported in key-value pair are buildNumber, pipelineName, stageName
+
+buildNumber: [mandatory]
+This specifies ID of the Job where we have created change request.
+
+stageName: [mandatory]
+This specifies the Job name where we have created change request..
+
+pipelineName: [mandatory]
+This specifies the pipeline name.
+
+Outputs:
+  sndevopschg.json file created with content: {
+    "status": "SUCCESS",
+    "changeRequestNumber": "CHGXXXXX"
+  }
+  
+  changeRequestNumber: Change Request Number found for the given change details
+  status: To know the status of the Change Request GET.
+
+```
+
+**Example of update change for ServiceNow via commandline**
+```yaml
+
+This custom step needs to be added at job level to Update change in ServiceNow instance for the changeRequestNumber provided as input along with changeRequestDetails.
+
+stages:
+  - DevOpsUpdateChangeStage
+
+ServiceNow DevOps Update Change:
+  stage: DevOpsUpdateChangeStage
+  image: servicenowdocker/sndevops:4.0.0
+  script: 
+    - sndevopscli update change -n 'CHGXXXXXX' -p "{\"short_description\":\"G Venkata12345 Automated Software Deployment\",\"description\":\"Automated Software Deployment.\",\"assignment_group\":\"XXXXX\",\"implementation_plan\":\"Software update is tested and results can be found in Test Summaries Tab.\",\"backout_plan\":\"When software fails in production, the previous software release will be re-deployed.\",\"test_plan\":\"Testing if the software was successfully deployed or not\"}"
+
+-n [Not mandatory if we have sndevopschg.json in our pipeline yml]: It stands for changeRequestNumber. The change request number to identify a unique change request. 
+   Precedence of choosing changeRequestNumber: 
+     - changeRequestNumber mentioned in the pipeline yml
+     - changeRequestNumber stored in sndevopschg.json.
+
+-p : It stands for changeDetails. The change details to be used for Updating the change request information identified by the specified change request number with the key-value pairs. The change details is a JSON object surrounded by curly braces {} containing key-value pair separated by a comma ,. A key-value pair consists of a key and a value separated by a colon :. The keys supported in key-value pair are short_description, state, description, work_notes ..so on
+
+OR
+  - sndevopscli update change -p "{\"short_description\":\"Updated Automated Software Deployment\",\"description\":\"Automated Software Deployment.\",\"assignment_group\":\"XXXXXXXXXX\",\"implementation_plan\":\"Software update is tested and results can be found in Test Summaries Tab.\",\"backout_plan\":\"When software fails in production, the previous software release will be re-deployed.\",\"test_plan\":\"Testing if the software was successfully deployed or not\"}"
+
+NOTE: State should be specified at last in case if you are update the state of change request.
+- sndevopscli update change -p "{\"short_description\":\"Updated Automated Software Deployment\",\"description\":\"Automated Software Deployment.\",\"assignment_group\":\"XXXXXXXXXX\",\"implementation_plan\":\"Software update is tested and results can be found in Test Summaries Tab.\",\"backout_plan\":\"When software fails in production, the previous software release will be re-deployed.\",\"test_plan\":\"Testing if the software was successfully deployed or not\","state":"3"}'
+
+```
+
+**Example to incorporate autoCloseChange feature for ServiceNow via commandline**
+```yaml
+
+stages:
+  - changeapproval
+
+ServiceNow DevOps Change Step:
+  stage: changeapproval
+  image: servicenowdocker/sndevops:4.0.0
+  script: 
+     - sndevopscli create change -p "{\"changeStepDetails\":{\"timeout\":3600,\"interval\":100},\"autoCloseChange\":true,\"attributes\":{\"short_description\":\"G Venkata Automated Software Deployment\",\"description\":\"Automated Software Deployment.\",\"assignment_group\":\"xxxxxxxx\",\"implementation_plan\":\"Software update is tested and results can be found in Test Summaries Tab.\",\"backout_plan\":\"When software fails in production, the previous software release will be re-deployed.\",\"test_plan\":\"Testing if the software was successfully deployed or not\"}}"
+  
+autoCloseChange: [optional] : Boolean value
+
+```
+

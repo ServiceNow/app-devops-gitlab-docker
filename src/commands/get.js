@@ -1,18 +1,11 @@
 'use strict';
+const Base = require('./base');
+const ChangeRequest  = require('./entity/changeRequest');
 
-module.exports = class Get {
+module.exports = class Get extends Base{
   constructor(program) {
+    super();
     const getCommand = program.command('get');
-
-    getCommand .command('change')
-      .action(() => {
-        console.log('get change');
-      });
-
-      getCommand.command('package')
-      .action(() => {
-        console.log('get package');
-      });
-
+    new ChangeRequest().get(getCommand);
   }
 }

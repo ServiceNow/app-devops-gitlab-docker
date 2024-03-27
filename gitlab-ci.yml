@@ -1,9 +1,11 @@
-image: servicenowdocker/sndevops:3.1.0
+image: servicenowdocker/sndevops:4.0.0
 stages:
   - pre-build
   - build
   - sonar
   - changeapproval
+  - getchange
+  - updatechange
   - deploy
 
 
@@ -26,9 +28,35 @@ ServiceNow DevOps SonarScan Results:
 
 ServiceNow DevOps Change Step:
   stage: changeapproval
+  variables:
+    CHG_JOB_ID: $CI_JOB_ID
   script: 
-     - sndevopscli create change -p '{"changeStepDetails":{"timeout":3600,"interval":100},"attributes":{"short_description":"Automated Software Deployment","description":"Automated Software Deployment.","assignment_group":"xxxxxx","implementation_plan":"Software update is tested and results can be found in Test Summaries Tab.","backout_plan":"When software fails in production, the previous software release will be re-deployed.","test_plan":"Testing if the software was successfully deployed or not"}}'
-     
+     - echo "CHG_JOB_ID=$CHG_JOB_ID" >> generated_job_id.env
+     - sndevopscli create change -p "{\"changeStepDetails\":{\"timeout\":3600,\"interval\":100},\"autoCloseChange\":true,\"attributes\":{\"short_description\":\"G Venkata Automated Software Deployment\",\"description\":\"Automated Software Deployment.\",\"assignment_group\":\"a715cd759f2002002920bde8132e7018\",\"implementation_plan\":\"Software update is tested and results can be found in Test Summaries Tab.\",\"backout_plan\":\"When software fails in production, the previous software release will be re-deployed.\",\"test_plan\":\"Testing if the software was successfully deployed or not\"}}"
+     - sndevopscli get change #If we are placing get change cli command in the same job where we are creating change then no need to mention the changeDetails.
+  artifacts:
+    paths:
+      - generated_job_id.env
+
+DevOps Get Change:
+  stage: getchange
+  script:
+    - source generated_job_id.env
+    - sndevopscli get change -p "{\"buildNumber\":${CHG_JOB_ID},\"stageName\":\"ServiceNow DevOps Change Step\",\"pipelineName\":\"SmrutiTestDemoProject\"}"
+  artifacts:
+    paths:
+      - sndevopschg.json  
+  dependencies:
+    - ServiceNow DevOps Change Step
+
+DevOps Update Change:
+  stage: updatechange
+  script:
+    #- sndevopscli update change -n 'CHGXXXX' -p "{\"short_description\":\"Automated Software Deployment\",\"description\":\"Automated Software Deployment.\",\"assignment_group\":\"xxxxxxx\",\"implementation_plan\":\"Software update is tested and results can be found in Test Summaries Tab.\",\"backout_plan\":\"When software fails in production, the previous software release will be re-deployed.\",\"test_plan\":\"Testing if the software was successfully deployed or not\"}"
+    - sndevopscli update change -p "{\"short_description\":\"Updated Automated Software Deployment\",\"description\":\"Automated Software Deployment.\",\"assignment_group\":\"xxxxxxx\",\"implementation_plan\":\"Software update is tested and results can be found in Test Summaries Tab.\",\"backout_plan\":\"When software fails in production, the previous software release will be re-deployed.\",\"test_plan\":\"Testing if the software was successfully deployed or not\"}"
+  dependencies:
+    - DevOps Get Change
+
 Deploy Job:
   stage: deploy
   script:
