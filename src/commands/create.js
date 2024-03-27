@@ -2,8 +2,8 @@
 
 const Base = require('./base');
 
-const ChangeRequest  = require('./entity/changeRequest')
-const Package = require('./entity/package')
+const ChangeRequest  = require('./entity/changeRequest');
+const Package = require('./entity/package');
 const Artifact = require('./entity/artifact');
 const SonarRegistration = require('./entity/sonarRegistration');
 
