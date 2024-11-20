@@ -14,9 +14,11 @@ module.exports = class ChangeRequest extends Base {
         this.addDefaultOptions(command);
 
         command.option('-p , --payload <changeAttributesPayload>', "Change Attributes payload in JSON format");
+        command.option('-ctx , --pipelineContext <pipelineContext>', "Additional context parameters in JSON format");
+        command.option('-w , --waitForApproval <waitForApproval>', "Option to wait for change creation and approval", 'true');
         command.action((options) => {
             console.log('Calling Change Control API to create change....');
-            new ChangeRequestManager(options.url,options.token,options.toolId).createChange(options.payload);
+            new ChangeRequestManager(options.url,options.token,options.toolId,options.waitForApproval).createChange(options.pipelineContext, options.payload);
         })
     }
 

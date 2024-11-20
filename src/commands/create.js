@@ -6,6 +6,7 @@ const ChangeRequest  = require('./entity/changeRequest');
 const Package = require('./entity/package');
 const Artifact = require('./entity/artifact');
 const SonarRegistration = require('./entity/sonarRegistration');
+const SecurtyScanRegistration = require('./entity/securityScan');
 
 module.exports = class Create extends Base{
   
@@ -19,6 +20,7 @@ module.exports = class Create extends Base{
     new Package().create(createCommand);
     new Artifact().create(createCommand);
     new SonarRegistration().create(createCommand);
+    new SecurtyScanRegistration().create(createCommand);
   }
   
 }
