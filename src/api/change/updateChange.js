@@ -2,6 +2,8 @@ const SnDevopsApi = require('../base/sndevopsApi.js')
 const API_UPDATE_CHANGE_PATH = 'api/sn_devops/devops/orchestration/changeInfo';
 const axios = require('axios');
 const fs = require('fs');
+const BaseEnv = require('../../common/baseEnv.js');
+const GetChangeManager = require('./getChange.js');
 
 class UpdateChangeManager extends SnDevopsApi {
     
@@ -19,12 +21,18 @@ class UpdateChangeManager extends SnDevopsApi {
             if(!changeRequestNumber) {
                 // Read the content of sndevopschg.json synchronously
                 try {
-                    data = fs.readFileSync('sndevopschg.json', 'utf8');
-                    console.log("Details in sndevopschg.json file = " + data);
-                    jsonData = JSON.parse(data);
-                    changeRequestNumber = jsonData.changeRequestNumber;
+                    var filePath = 'sndevopschg.json';
+                    if (fs.existsSync(filePath)) {
+                        data = fs.readFileSync(filePath, 'utf8');
+                        console.log("Details in sndevopschg.json file = " + data);
+                        jsonData = JSON.parse(data);
+                        changeRequestNumber = jsonData.changeRequestNumber;   
+                      } else {
+                        let outputObject = await new GetChangeManager().getChange();
+                        changeRequestNumber = outputObject.changeRequestNumber;
+                      }
                 } catch (err) {
-                    throw new Error("changeRequestNumber is a required field. Enter the correct changeRequestNumber or pass the correct artifact file and try again.");
+                    throw new Error("changeRequestNumber is a required field. Enter the correct changeRequestNumber or pass the correct artifact file and try again. "+ err);
                 }
             }
 
@@ -68,7 +76,7 @@ class UpdateChangeManager extends SnDevopsApi {
                     }
 
                     else if (err.message.includes('401')) {
-                        throw new Error('The SNOW_TOKEN and SNOW_TOOLID are incorrect. Verify that the GitLab project level variables are configured.');
+                        throw new Error('The SNOW_TOKEN and SNOW_TOOLID are incorrect. Verify that the variables are configured.');
                     }
 
                     else if (err.message.includes('405')) {

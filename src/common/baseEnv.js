@@ -23,6 +23,11 @@ module.exports = class BaseEnv{
         static CI_DEFAULT_BRANCH = process.env.CI_DEFAULT_BRANCH;
         static CI_MERGE_REQUEST_SOURCE_BRANCH_NAME = process.env.CI_MERGE_REQUEST_SOURCE_BRANCH_NAME;
 
+        static CI_RUN_ATTEMPT = process.env.CI_RUN_ATTEMPT;
+        static CI_REPOSITORY_NAME = process.env.CI_REPOSITORY_NAME;
+        static CI_CALLBACK_URL = process.env.CI_CALLBACK_URL;
+        static CI_WORKFLOW_NAME = process.env.CI_WORKFLOW_NAME;
+
     static getEnv(envVariableName){
         return process.env[envVariableName];
     }

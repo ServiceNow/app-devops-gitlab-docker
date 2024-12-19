@@ -6,10 +6,11 @@ const BaseEnv = require('../../common/baseEnv')
 
 class SndevopsApi {
 
-    constructor(url = null, token = null, toolId = null) {
+    constructor(url = null, token = null, toolId = null, waitForApproval = false) {
         this.url = url ? url : BaseEnv.SNOW_URL ;
         this.token = token ? token  : BaseEnv.SNOW_TOKEN ;
         this.toolId = toolId ? toolId : BaseEnv.SNOW_TOOLID;
+        this.waitForApproval = waitForApproval;
         console.log("ServiceNow Url set to " + this.url + " tool id: " + this.toolId)
         this.validateMandatoryParams(this.url, this.token, this.toolId);
     }
@@ -21,7 +22,7 @@ class SndevopsApi {
         if(!toolId) errorMessage += "SNOW_TOOLID is a required field.";
 
         if(errorMessage) {
-            errorMessage += " Verify that the GitLab project level variables are configured.";
+            errorMessage += " Verify that the variables are configured.";
             console.error('\n \x1b[1m\x1b[31m' + errorMessage + '\x1b[0m\x1b[0m');
             process.exit(1);
         }

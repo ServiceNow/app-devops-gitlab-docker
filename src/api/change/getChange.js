@@ -26,6 +26,7 @@ class GetChangeManager extends SnDevopsApi {
         let outputObject = {};
         let changeDetailsParsed;
         let gitLabProjectId;
+        let attemptNumber;
 
         try {
             outputObject.status = status;
@@ -37,6 +38,7 @@ class GetChangeManager extends SnDevopsApi {
                     buildNumber = changeDetailsParsed.buildNumber;
                     stageName = changeDetailsParsed.stageName;
                     pipelineName = changeDetailsParsed.pipelineName;
+                    attemptNumber = changeDetailsParsed.attemptNumber
                 } catch (e) {
                     throw new Error("Change request details cannot be retrieved because changeDetails were not parsed.");
                 }
@@ -47,15 +49,19 @@ class GetChangeManager extends SnDevopsApi {
                 stageName = stageName || BaseEnv.CI_JOB_NAME;
                 pipelineName = pipelineName || BaseEnv.CI_PROJECT_TITLE;
                 gitLabProjectId = BaseEnv.CI_PROJECT_ID;
+                attemptNumber = attemptNumber || BaseEnv.CI_RUN_ATTEMPT;
 
-                console.log("buildNumber " + buildNumber + " stageName = " + stageName + "pipelineName = " + pipelineName);
+                console.log("buildNumber " + buildNumber + " stageName = " + stageName + " pipelineName = " + pipelineName + " attemptNumber = "+ attemptNumber);
 
                 url = new URL(API_GET_CHANGE_PATH, this.url);
                 url.searchParams.append("buildNumber", buildNumber);
                 url.searchParams.append("stageName", stageName);
                 url.searchParams.append("pipelineName", pipelineName);
                 url.searchParams.append("toolId", this.toolId);
-                url.searchParams.append("pipelineId", gitLabProjectId);
+                if(gitLabProjectId)
+                    url.searchParams.append("pipelineId", gitLabProjectId);
+                if(attemptNumber)
+                    url.searchParams.append("attemptNumber", attemptNumber);
                 console.log("Get change API = " + url.toString());
 
                 httpHeaders = { headers: this._getAuthHeaderWithToken() };    
@@ -69,6 +75,7 @@ class GetChangeManager extends SnDevopsApi {
                     outputObject.changeRequestNumber = response.data.result.number;
                     outputObject.status = status;
                     this._writeToOutputFile(outputObject);
+                    return outputObject;
                 } else {
                     status = "NOT SUCCESSFUL";
                     throw new Error('No response from ServiceNow. Please check ServiceNow logs for more details.');
@@ -85,7 +92,7 @@ class GetChangeManager extends SnDevopsApi {
                     }
 
                     else if (err.message.includes('401')) {
-                        throw new Error('The SNOW_TOKEN and SNOW_TOOLID are incorrect. Verify that the GitLab project level variables are configured.');
+                        throw new Error('The SNOW_TOKEN and SNOW_TOOLID are incorrect. Verify that the variables are configured.');
                     }
 
                     else if (err.message.includes('405')) {
@@ -131,9 +138,13 @@ class GetChangeManager extends SnDevopsApi {
         // Stringify the JSON object
         const outputObjectString = JSON.stringify(outputObject, null, 2);
         // Write the JSON string to the sndevopschg.json file
-        fs.writeFileSync('sndevopschg.json', outputObjectString);    
-        // Log message to confirm the file creation
-        console.log('sndevopschg.json file created with content:', outputObjectString);
+        try {
+            fs.writeFileSync('sndevopschg.json', outputObjectString);    
+              // Log message to confirm the file creation
+            console.log('sndevopschg.json file created with content:', outputObjectString);
+        } catch (err) {
+            // ignore error
+        }
     }
 }
 

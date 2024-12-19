@@ -34,7 +34,7 @@ class PackageManager extends SnDevopsApi {
             }
             
             else if (e.message.includes('401')) {
-                throw new Error('The SNOW_TOKEN and SNOW_TOOLID are incorrect. Verify that the GitLab project level variables are configured.');
+                throw new Error('The SNOW_TOKEN and SNOW_TOOLID are incorrect. Verify that the variables are configured.');
             }
             
             else if (e.message.includes('405')) {
@@ -73,12 +73,14 @@ class PackageManager extends SnDevopsApi {
         let requestPayload = {
             "name": packageName,
             "artifacts": artifacts,
-            "pipelineName": BaseEnv.CI_PROJECT_PATH,
+            "pipelineName": BaseEnv.CI_PROJECT_TITLE,
             "stageName": BaseEnv.CI_JOB_NAME,
             "taskExecutionNumber": BaseEnv.CI_JOB_ID,
-            "branchName": branchName,
-            "gitLabProjectId": BaseEnv.CI_PROJECT_ID
+            "branchName": branchName
         };
+        if(BaseEnv.CI_PROJECT_ID) {
+            requestPayload.gitLabProjectId = BaseEnv.CI_PROJECT_ID;
+        }
 
         return requestPayload;
     }

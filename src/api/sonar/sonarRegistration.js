@@ -1,8 +1,7 @@
 const SnDevopsApi = require('../base/sndevopsApi.js')
 const axios = require('axios');
 const API_SONAR_PATH = 'api/sn_devops/devops/tool/softwarequality';
-const BaseEnv = require('../../common/baseEnv.js')
-
+const BaseEnv = require('../../common/baseEnv.js');
 
 class SonarRegistrationManager extends SnDevopsApi {
 
@@ -49,12 +48,12 @@ class SonarRegistrationManager extends SnDevopsApi {
                 process.exit(1);
 
             } else if (e.message.includes('401')) {
-                console.error('The SNOW_TOKEN and SNOW_TOOLID are incorrect. Verify that the GitLab project level variables are configured.');
+                console.error('The SNOW_TOKEN and SNOW_TOOLID are incorrect. Verify that the variables are configured.');
                 process.exit(1);
 
             } else if(e.message.includes('400') || e.message.includes('404')){
                 let errMsg = '[ServiceNow DevOps] Register Sonar Scan Summaries are not Successful. ';
-                let errMsgSuffix = ' Provide valid inputs and verify that the GitLab project level variables are configured.';
+                let errMsgSuffix = ' Provide valid inputs and verify that the variables are configured.';
                 let responseData = e.response.data;
                 
                 if (responseData && responseData.result && responseData.result.errorMessage) {
@@ -81,18 +80,27 @@ class SonarRegistrationManager extends SnDevopsApi {
 
     _getRequestBodyForSonarSummary(sonarPayload) {
         let branchName = this.fetchBranchName();
-        return {
+        let payload = {
             "sonarProjectKey": sonarPayload.sonarProjectKey,
             "sonarUrl": sonarPayload.sonarUrl,
-            "repositoryName": BaseEnv.CI_PROJECT_TITLE,
+            "repositoryName": BaseEnv.CI_REPOSITORY_NAME,
+            "repository": BaseEnv.CI_REPOSITORY_NAME,
             "pipelineName": BaseEnv.CI_PROJECT_TITLE,
             "buildNumber": BaseEnv.CI_JOB_ID,
             "stageName": BaseEnv.CI_JOB_NAME,
             "branchName": branchName,
-            "gitLabProjectId": BaseEnv.CI_PROJECT_ID,
             "toolId": this.toolId
         };
-
+        if(BaseEnv.CI_PROJECT_ID) {
+            payload.gitLabProjectId = BaseEnv.CI_PROJECT_ID
+        }
+        if(BaseEnv.CI_WORKFLOW_NAME) {
+            payload.workflow =  BaseEnv.CI_WORKFLOW_NAME
+        }
+        if(BaseEnv.CI_RUN_ATTEMPT) {
+            payload.attemptNumber = BaseEnv.CI_RUN_ATTEMPT;
+        }
+        return payload;
     }
 
 }
