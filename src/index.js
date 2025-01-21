@@ -4,6 +4,9 @@ const  Create  = require('./commands/create')
 const  Get  = require('./commands/get')
 const  Update  = require('./commands/update')
 const commander = require('commander') 
+const BaseEnv = require('./common/baseEnv')
+
+BaseEnv.loadEnvironmentVariables()
 
 const program = new commander.Command();
 // Add nested commands using `.command()`.

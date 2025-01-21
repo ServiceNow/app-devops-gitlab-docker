@@ -1,4 +1,5 @@
 require('dotenv').config();
+const ToolHandlerRegistry = require("../handler/registry");
 
 module.exports = class BaseEnv{
     
@@ -30,5 +31,27 @@ module.exports = class BaseEnv{
 
     static getEnv(envVariableName){
         return process.env[envVariableName];
+    }
+
+
+    static loadEnvironmentVariables() {
+        const handler = new ToolHandlerRegistry().getToolHandler();
+        if(handler) {
+            this.CI_JOB_ID ||= handler.getJobId();
+            this.CI_JOB_NAME ||=  handler.getJob();
+            this.CI_PIPELINE_ID ||= handler.getPipelineId();
+            this.CI_PROJECT_TITLE ||=  handler.getProjectTitle();
+            this.CI_COMMIT_BRANCH ||= handler.getBranch();
+            this.CI_DEFAULT_BRANCH ||= handler.getBranch();
+            this.CI_RUN_ATTEMPT ||=  handler.getRunAttempt();
+            this.CI_WORKFLOW_NAME ||=  handler.getWorkflow();
+            this.CI_REPOSITORY_NAME ||=  handler.getRepository();
+            this.CI_API_V4_URL ||=  handler.getServerURL();
+            this.CI_ORG_ID ||=  handler.getOrgId();
+            this.CI_PROJECT_ID ||=  handler.getProjectId();
+            if(handler['getCallbackURL'] && typeof handler['getCallbackURL'] === 'function'){
+                this.CI_CALLBACK_URL = handler.getCallbackURL();
+            }
+        }
     }
 }

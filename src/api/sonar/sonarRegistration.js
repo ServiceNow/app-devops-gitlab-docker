@@ -5,7 +5,7 @@ const BaseEnv = require('../../common/baseEnv.js');
 
 class SonarRegistrationManager extends SnDevopsApi {
 
-    async createSonarSummary(sonarProjectKey, sonarUrl) {
+    async createSonarSummary(sonarProjectKey, sonarUrl, branchName) {
         let sonarPayload; //Payload contains information necessary for fetching sonar summary
         let endpoint;
         let httpHeaders;
@@ -24,6 +24,7 @@ class SonarRegistrationManager extends SnDevopsApi {
         sonarPayload = {
             "sonarProjectKey": sonarProjectKey,
             "sonarUrl": sonarUrl,
+            "branchName": branchName
         };
         
         endpoint = new URL(API_SONAR_PATH, this.url);
@@ -79,7 +80,10 @@ class SonarRegistrationManager extends SnDevopsApi {
     }
 
     _getRequestBodyForSonarSummary(sonarPayload) {
-        let branchName = this.fetchBranchName();
+        let branchName = sonarPayload.branchName;
+        if(!branchName){
+            branchName = this.fetchBranchName();
+        }
         let payload = {
             "sonarProjectKey": sonarPayload.sonarProjectKey,
             "sonarUrl": sonarPayload.sonarUrl,
