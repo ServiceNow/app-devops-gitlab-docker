@@ -1,8 +1,9 @@
-image: servicenowdocker/sndevops:4.0.0
+image: servicenowdocker/sndevops:5.1.0
 stages:
   - pre-build
   - build
   - sonar
+  - securityscan
   - changeapproval
   - getchange
   - updatechange
@@ -25,6 +26,12 @@ ServiceNow DevOps SonarScan Results:
   stage: sonar
   script:
     - sndevopscli create sonar -url 'https://sonarcloud.io' -projectKey 'xxxxxxx'
+
+
+ServiceNow DevOps Security Scan Results:
+  stage: securityscan
+  script:
+    - sndevopscli create securityScan -p "{\"pipelineInfo\":{\"buildNumber\":\"${CI_JOB_ID}\", \"stageName\":\"ServiceNow DevOps Security Scan Results\",\"taskExecutionUrl\":\"${CI_JOB_URL}\" },\"securityResultAttributes\":{ \"scanner\":\"Veracode\",\"applicationName\":\"PetStoreAPI-Github\",\"buildVersion\":\"\",\"securityToolId\":\"\"}}"
 
 ServiceNow DevOps Change Step:
   stage: changeapproval

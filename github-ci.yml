@@ -1,0 +1,95 @@
+name: GithubAction
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+env:
+  SNOW_URL: ${{ secrets.SNOW_URL }}
+  SNOW_TOKEN: ${{ secrets.SNOW_TOKEN }}
+  SNOW_TOOLID: ${{ secrets.SNOW_TOOLID }}
+  # These are the optional env variables
+  #CI_PIPELINE_ID: ${{ github.run_id }}
+  #CI_API_V4_URL: ${{ github.server_url }}
+  #CI_JOB_ID: ${{ github.run_id }}
+  #CI_PROJECT_PATH: ${{ github.job }}
+  #CI_REPOSITORY_NAME: ${{ github.repository }}
+  #CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+  #CI_PROJECT_TITLE: ${{ github.repository }}/${{github.workflow}}
+  #CI_COMMIT_BRANCH: ${{ github.ref_name }}
+  #CI_WORKFLOW_NAME: ${{ github.workflow }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up JDK 17
+        run: |
+          echo 'hello'
+
+  ServiceNowDevOpsChange:
+     runs-on: ubuntu-latest
+     needs: build
+     container:
+       image: servicenowdocker/sndevops:5.1.0
+     env:
+       CI_JOB_NAME: "ServiceNowDevOpsChange"
+
+     steps:
+       - name: create change
+         run: |
+           sndevopscli create change -p "{\"changeStepDetails\":{\"timeout\":3600,\"interval\":10},\"autoCloseChange\":true,\"attributes\":{\"short_description\":\"G Venkata Automated Software Deployment\",\"description\":\"Automated Software Deployment.\",\"assignment_group\":\"a715cd759f2002002920bde8132e7018\",\"implementation_plan\":\"Software update is tested and results can be found in Test Summaries Tab.\",\"backout_plan\":\"When software fails in production, the previous software release will be re-deployed.\",\"test_plan\":\"Testing if the software was successfully deployed or not\"}}"
+
+  ServiceNowUpdateDevOpsChange:
+       runs-on: ubuntu-latest
+       needs: ServiceNowDevOpsChange
+       container:
+         image: servicenowdocker/sndevops:5.1.0
+       env:
+         CI_JOB_NAME: "ServiceNowDevOpsChange"
+  
+       steps:
+         - name: update change
+           run: |
+             sndevopscli update change -p "{\"short_description\":\"Updated Automated Software Deployment\",\"description\":\"Automated Software Deployment.\",\"assignment_group\":\"a715cd759f2002002920bde8132e7018\",\"implementation_plan\":\"Software update is tested and results can be found in Test Summaries Tab.\",\"backout_plan\":\"When software fails in production, the previous software release will be re-deployed.\",\"test_plan\":\"Testing if the software was successfully deployed or not\"}"
+
+  ArtifactAndPackage:
+      runs-on: ubuntu-latest
+      needs: build
+      container:
+        image: servicenowdocker/sndevops:5.1.0
+      env:
+        CI_JOB_NAME: "ArtifactAndPackage"
+      steps:
+        - name: create artifact
+          run: |
+             sndevopscli create artifact -a "[{\"name\": \"com:customactiondemo\",\"version\": \"1.${{ github.run_number }}\",\"semanticVersion\": \"1.${{ github.run_number }}.0\",\"repositoryName\": \"${{ github.repository }}\"}]"
+             sndevopscli create package -n "Test_Package" -a "[{\"name\": \"com:customactiondemo\",\"version\": \"1.${{ github.run_number }}\",\"semanticVersion\": \"1.${{ github.run_number }}.0\",\"repositoryName\": \"${{ github.repository }}\"}]"
+
+  ServiceNowDevOpsSonarScanResults:
+      name: ServiceNowDevOpsSonarScanResults
+      needs: ArtifactAndPackage
+      runs-on: ubuntu-latest
+      container:
+        image: servicenowdocker/sndevops:5.1.0
+      env:
+        CI_JOB_NAME: "ServiceNowDevOpsSonarScanResults"
+      steps:
+        - name: devops soanr results
+          run: |
+            sndevopscli create sonar -url 'https://sonarcloud.io' -projectKey 'xxxxxxx'
+
+  ServiceNowDevOpsSecurityScan:
+      name: ServiceNowDevOpsSecurityScan
+      runs-on: ubuntu-latest
+      needs: build
+      container:
+        image: servicenowdocker/sndevops:5.1.0
+      steps:
+        - name: security scan
+          run: |
+           sndevopscli create securityScan -p "{ \"pipelineInfo\": {  \"runId\": \"${{ github.run_id }}\",   \"runNumber\": \"${{ github.run_number }}\", \"runAttempt\": \"${{ github.run_attempt }}\",   \"job\": \"ServiceNowDevOpsSecurityScan\",  \"workflow\": \"${{ github.workflow }}\",  \"repository\": \"${{github.repository}}\" }, \"securityResultAttributes\": { \"scanner\": \"Veracode\",    \"applicationName\": \"PetStoreAPI-Github\",\"buildVersion\": \"\",   \"securityToolId\": \"\"}}"

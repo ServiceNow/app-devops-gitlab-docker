@@ -3,6 +3,7 @@ const axios = require('axios');
 const url = require('node:url');
 require('dotenv').config();
 const BaseEnv = require('../../common/baseEnv')
+const ToolHandlerRegistry = require('../../handler/registry.js');
 
 class SndevopsApi {
 
@@ -78,6 +79,14 @@ class SndevopsApi {
            branchName = BaseEnv.CI_MERGE_REQUEST_SOURCE_BRANCH_NAME;
 
         return branchName;
+    }
+
+    buildPipelineName(pipelineName) {
+        const handler = new ToolHandlerRegistry().getToolHandler();
+        if(handler) {
+            return handler.getPipelineName(pipelineName)
+        }
+        return pipelineName
     }
     
 }

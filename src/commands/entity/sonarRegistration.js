@@ -14,11 +14,12 @@ module.exports = class SonarRegistration extends Base {
         this.addDefaultOptions(command);
 
         command.requiredOption('-projectKey, --sonarProjectKey <sonarProjectKey>', 'Sonar Project Key')
-        .requiredOption('-url, --sonarUrl <sonarUrl>', 'Sonar URL');
+        .requiredOption('-url, --sonarUrl <sonarUrl>', 'Sonar URL')
+        .option('-branch, --branchName <branchName>', 'branch Name');
 
         command.action((options) => {
             console.log("Sonar registartion action called " )
-            new SonarRegistrationManager(options.url,options.token,options.toolId).createSonarSummary(options.sonarProjectKey, options.sonarUrl)
+            new SonarRegistrationManager(options.url,options.token,options.toolId).createSonarSummary(options.sonarProjectKey, options.sonarUrl, options.branchName)
         })
     }
 

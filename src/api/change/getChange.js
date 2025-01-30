@@ -56,7 +56,7 @@ class GetChangeManager extends SnDevopsApi {
                 url = new URL(API_GET_CHANGE_PATH, this.url);
                 url.searchParams.append("buildNumber", buildNumber);
                 url.searchParams.append("stageName", stageName);
-                url.searchParams.append("pipelineName", pipelineName);
+                url.searchParams.append("pipelineName", this.buildPipelineName(pipelineName));
                 url.searchParams.append("toolId", this.toolId);
                 if(gitLabProjectId)
                     url.searchParams.append("pipelineId", gitLabProjectId);

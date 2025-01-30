@@ -1,0 +1,254 @@
+# This is an example pipeline, and your pipeline and container configurations may vary from the setup shown here.
+# Refer to the pipeline stages for Security, Software, and Change configurations. 
+# Using this YAML file directly will not work as it contains several Harness-specific configurations; check the Command section present for container steps.
+pipeline:
+  name: Example pipeline
+  identifier: Example_pipeline 
+  projectIdentifier: Example_project
+  orgIdentifier: ExampleOrg
+  tags: {}
+  stages:
+    - stage:
+        name: Build
+        identifier: Build
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: ShellScript_1
+                  identifier: ShellScript_1
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo "Building.."
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+        tags: {}
+    - stage:
+        name: ServiceNow DevOps Sonar Scan Results
+        identifier: ServiceNow_DevOps_Sonar_Scan_Results
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: Container
+                  name: Sonar container
+                  identifier: Sonar_container
+                  spec:
+                    connectorRef: docker_connector # harness docker connector
+                    image: servicenowdocker/sndevops:5.1.0
+                    command: |-
+                      export SNOW_URL="<+variable.SNOW_URL>"
+                      export SNOW_TOOLID="<+variable.SNOW_TOOLID>"
+                      export SNOW_TOKEN="<+variable.SNOW_TOKEN>"
+                      export HARNESS_STAGE_NAME="<+stage.identifier>"
+                      export HARNESS_PIPELINE_NAME="<+org.identifier>/<+project.identifier>/<+pipeline.name>"
+                      export CI_COMMIT_BRANCH="main"
+                      sndevopscli create sonar -url 'https://sonarcloud.io' -projectKey 'SONAR_PROJECT_KEY' -branch "main"
+                    shell: Sh
+                    infrastructure:
+                      type: KubernetesDirect
+                      spec:
+                        connectorRef: KUBE_CONNECTOR # harness kubernates connector
+                        namespace: harness-delegate-ng
+                        resources:
+                          limits:
+                            cpu: "0.5"
+                            memory: 500Mi
+                        annotations: {}
+                        labels: {}
+                        containerSecurityContext:
+                          capabilities:
+                            drop: []
+                            add: []
+                        nodeSelector: {}
+                    reports:
+                      type: JUnit
+                      spec:
+                        paths: []
+                    outputVariables: []
+                    envVariables: {}
+                  timeout: 1h
+        tags: {}
+    - stage:
+        name: ServiceNow DevOps Security Scan Results
+        identifier: ServiceNow_DevOps_Security_Scan_Results
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: Container
+                  name: security
+                  identifier: security
+                  spec:
+                    connectorRef: docker_connector # harness docker connector
+                    image: servicenowdocker/sndevops:5.1.0
+                    command: |-
+                      export SNOW_URL="<+variable.SNOW_URL>"
+                      export SNOW_TOOLID="<+variable.SNOW_TOOLID>"
+                      export SNOW_TOKEN="<+variable.SNOW_TOKEN>"
+                      sndevopscli create securityScan -p \
+                      "{\"pipelineInfo\":{
+                          \"buildNumber\":\"<+stage.nodeExecutionId>\",
+                          \"taskExecutionUrl\":\"<+pipeline.executionUrl>?stage=<+stage.nodeExecutionId>\", 
+                          \"orchestrationPipeline\":\"<+org.identifier>/<+project.identifier>/<+pipeline.name>\" 
+                        },
+                        \"securityResultAttributes\":{
+                           \"scanner\":\"Veracode\",
+                           \"applicationName\":\"VeraDemo-10\"
+                        }
+                      }"
+                    shell: Sh
+                    infrastructure:
+                      type: KubernetesDirect
+                      spec:
+                        connectorRef: KUBE_CONNECTOR # harness kubernates connector
+                        namespace: harness-delegate-ng
+                        resources:
+                          limits:
+                            cpu: "0.5"
+                            memory: 500Mi
+                        annotations: {}
+                        labels: {}
+                        containerSecurityContext:
+                          capabilities:
+                            drop: []
+                            add: []
+                        nodeSelector: {}
+                    reports:
+                      type: JUnit
+                      spec:
+                        paths: []
+                    outputVariables: []
+                    envVariables: {}
+                  timeout: 1h
+        tags: {}
+    - stage:
+        name: Deploy
+        identifier: Deploy
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          service:
+            serviceRef: service
+          environment:
+            environmentRef: Dev
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: Infra
+          execution:
+            steps:
+              - step:
+                  type: Container
+                  name: ServiceNow change
+                  identifier: ServiceNow_change
+                  spec:
+                    connectorRef: docker_connector # harness docker connector
+                    image: servicenowdocker/sndevops:5.1.0
+                    command: |-
+                      # set mandetory variables. These can be set from Environment variable section of Optional configuration as well.
+                      export HARNESS_STAGE_NAME="<+stage.identifier>"
+                      export SNOW_URL="<+variable.SNOW_URL>"
+                      export SNOW_TOOLID="<+variable.SNOW_TOOLID>"
+                      export SNOW_TOKEN="<+variable.SNOW_TOKEN>"
+                      # "sndevopscli create change" command notifies ServiceNow DevOps to create a change. 
+                      # Ensure to update "upstreamStage" accordingly. Example, if you have 3 stages Test, Change and Deploy in your pipeline, then you must update as "upstreamStage": "<+pipeline.stages.Test.nodeExecutionId>". Note that if your change stage is the first stage, you can remove this line.
+                      sndevopscli create change -ctx \
+                      "{
+                          \"pipelineExecutionUrl\":\"<+pipeline.executionUrl>\",
+                          \"stageIdentifier\": \"<+stage.identifier>\",
+                          \"stageNodeExecutionId\": \"<+stage.nodeExecutionId>\",
+                          \"pipelineName\": \"<+pipeline.name>\",
+                          \"upstreamStage\": \"<+pipeline.stages.ServiceNow_DevOps_Security_Scan_Results.nodeExecutionId>\"
+                      }" -p \
+                      "{
+                          \"changeStepDetails\":
+                          {
+                                  \"timeout\":3600,
+                                  \"interval\":100
+                          },
+                          \"autoCloseChange\":true,
+                          \"attributes\":{
+                              \"chg_model\":\"adffaa9e4370211072b7f6be5bb8f2ed\",
+                              \"short_description\":\"Software Deployment\",
+                              \"description\":\"Automated Software Deployment.\",
+                              \"implementation_plan\":\"Software update is tested and results can be found in Test Summaries Tab.\",
+                              \"backout_plan\":\"When software fails in production, the previous software release will be re-deployed.\",
+                              \"test_plan\":\"Testing if the software was successfully deployed or not\"
+                          }
+                      }"
+                    shell: Sh
+                    infrastructure:
+                      type: KubernetesDirect
+                      spec:
+                        connectorRef: KUBE_CONNECTOR # harness kubernates connector
+                        namespace: harness-delegate-ng
+                        resources:
+                          limits:
+                            cpu: "0.5"
+                            memory: 500Mi
+                        annotations: {}
+                        labels: {}
+                        containerSecurityContext:
+                          capabilities:
+                            drop: []
+                            add: []
+                        nodeSelector: {}
+                    reports:
+                      type: JUnit
+                      spec:
+                        paths: []
+                    outputVariables: []
+                    envVariables: {}
+                  timeout: 1h
+              - step:
+                  type: ShellScript
+                  name: ShellScript_1
+                  identifier: ShellScript_1
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo "Deploying.."
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+            rollbackSteps: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+  properties:
+    ci:
+      codebase:
+        connectorRef: CI_CONNECTOR
+        repoName: REPO_NAME
+        build: <+input>
+        sparseCheckout: []
+  notificationRules:
+    - name: devopsbugbashwp5
+      identifier: devopsbugbashwp5
+      pipelineEvents:
+        - type: AllEvents
+      notificationMethod:
+        type: Webhook
+        spec:
+          webhookUrl: https://{instance_url}/api/sn_devops/v2/devops/tool/orchestration?toolId={tool sys id}&projectId={project sys id}&ni.nolog.token={token}
+      enabled: true

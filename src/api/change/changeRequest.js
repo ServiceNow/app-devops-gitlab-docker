@@ -2,7 +2,7 @@ const SnDevopsApi = require('../base/sndevopsApi.js')
 const API_CHANGE_PATH = 'api/sn_devops/devops/orchestration/changeControl';
 const API_CHANGE_STATUS_PATH = 'api/sn_devops/devops/orchestration/changeStatus';
 const axios = require('axios');
-const BaseEnv = require('../../common/baseEnv.js')
+const BaseEnv = require('../../common/baseEnv.js');
 
 
 class ChangeRequestManager extends SnDevopsApi {
@@ -34,11 +34,9 @@ class ChangeRequestManager extends SnDevopsApi {
         try {
             changePayload = {
                 "buildNumber": BaseEnv.CI_PIPELINE_ID,
-                "apiPath": BaseEnv.CI_API_V4_URL,
                 "jobId": BaseEnv.CI_JOB_ID,
                 "pipelineName": BaseEnv.CI_PROJECT_TITLE,
-                "jobName": BaseEnv.CI_JOB_NAME,
-                "projectPath": BaseEnv.CI_PROJECT_PATH
+                "jobName": BaseEnv.CI_JOB_NAME
             };
             if(BaseEnv.CI_PROJECT_ID) {
                 changePayload.projectId = BaseEnv.CI_PROJECT_ID;
@@ -51,6 +49,12 @@ class ChangeRequestManager extends SnDevopsApi {
             }
             if(BaseEnv.CI_REPOSITORY_NAME) {
                 changePayload.repository = BaseEnv.CI_REPOSITORY_NAME;
+            }
+            if(BaseEnv.CI_PROJECT_PATH) {
+                changePayload.projectPath = BaseEnv.CI_PROJECT_PATH;
+            }
+            if(BaseEnv.CI_API_V4_URL) {
+                changePayload.apiPath = BaseEnv.CI_API_V4_URL;
             }
 
             //ChangeAttributes are optional
@@ -71,7 +75,8 @@ class ChangeRequestManager extends SnDevopsApi {
                 }
             }
 
-            response = await this.createChangeNotification(changePayload, pipelineContext);
+            let payload = this._getRequestBodyForChangeCreation(changePayload, pipelineContext);
+            response = await this.createChangeNotification(payload);
             if (status) {
                 interval = interval >= 100 ? interval : 100;
                 timeout = timeout >= 100 ? timeout : 3600;
@@ -80,7 +85,7 @@ class ChangeRequestManager extends SnDevopsApi {
                 let prevPollChangeDetails = {};
 
                 try {
-                    response = await this.tryFetch(start, interval, timeout, prevPollChangeDetails, changePayload);
+                    response = await this.tryFetch(start, interval, timeout, prevPollChangeDetails, payload);
                 } catch (error) {
                     throw new Error(error.message);
                 }
@@ -92,7 +97,7 @@ class ChangeRequestManager extends SnDevopsApi {
         }
     }
 
-    async createChangeNotification(changePayload, pipelineContext) {
+    async createChangeNotification(changePayload) {
         let status = false;
         let response;
 
@@ -100,8 +105,7 @@ class ChangeRequestManager extends SnDevopsApi {
             let url = new URL(API_CHANGE_PATH, this.url);
             url.searchParams.append("toolId", this.toolId);
 
-            let payload = this._getRequestBodyForChangeCreation(changePayload, pipelineContext);
-            console.log("Change creation payload = " + JSON.stringify(payload));
+            console.log("Change creation payload = " + JSON.stringify(changePayload));
             const defaultHeadersForToken = {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
@@ -109,7 +113,7 @@ class ChangeRequestManager extends SnDevopsApi {
             };
             let httpHeaders = { headers: defaultHeadersForToken };
             try {
-                response = await axios.post(url.toString(), JSON.stringify(payload), httpHeaders);
+                response = await axios.post(url.toString(), JSON.stringify(changePayload), httpHeaders);
                 status = true;
             } catch (err) {
                 if (err.code === 'ECONNABORTED') {
@@ -163,7 +167,9 @@ class ChangeRequestManager extends SnDevopsApi {
             if (status) {
                 var result = response.data.result;
                 if (result && result.status == "Success") {
-                    if (result.message)
+                    if (result.changeControl === false)
+                        console.log('\n     \x1b[1m\x1b[36m' + "Change control is not enabled on the pipeline stage" + '\x1b[0m\x1b[0m');
+                    else if (result.message)
                         console.log('\n     \x1b[1m\x1b[36m' + result.message + '\x1b[0m\x1b[0m');
                     else
                         console.log('\n     \x1b[1m\x1b[36m' + "The job is under change control. A callback request is created and polling has been started to retrieve the change info." + '\x1b[0m\x1b[0m');
@@ -235,10 +241,10 @@ class ChangeRequestManager extends SnDevopsApi {
 
         let url = new URL(API_CHANGE_STATUS_PATH, this.url);
         url.searchParams.append("toolId", this.toolId);
-        url.searchParams.append("stageName", changePayload.jobName);
+        url.searchParams.append("stageName", changePayload.stageName);
         url.searchParams.append("buildNumber", changePayload.jobId);
-        url.searchParams.append("pipelineName", changePayload.pipelineName);
-        url.searchParams.append("pipelineId", changePayload.projectId);
+        url.searchParams.append("pipelineName", this.buildPipelineName(changePayload.pipelineName));
+        url.searchParams.append("pipelineId", changePayload.gitLabProjectId);
         if(changePayload.attemptNumber)
             url.searchParams.append("attemptNumber", changePayload.attemptNumber);
 
@@ -369,6 +375,7 @@ class ChangeRequestManager extends SnDevopsApi {
         let payload = {
             "toolId": this.toolId,
             "stageName": changePayload.jobName,
+            "stageIdentifier": changePayload.jobName,
             "buildNumber": changePayload.buildNumber,
             "callbackURL": BaseEnv.CI_CALLBACK_URL ? BaseEnv.CI_CALLBACK_URL : changePayload.apiPath + "/projects/" + changePayload.projectId + "/jobs/" + changePayload.jobId,
             "isMultiBranch": "true",
@@ -384,8 +391,13 @@ class ChangeRequestManager extends SnDevopsApi {
             "attemptNumber": changePayload.attemptNumber
         }
 
+        if(BaseEnv.CI_ORG_ID) {
+            payload.orgIdentifier = BaseEnv.CI_ORG_ID;
+        }
+
         if(changePayload.projectId) {
             payload.gitLabProjectId = changePayload.projectId;
+            payload.projectIdentifier = changePayload.projectId;
         }
 
         if(pipelineContext) {
