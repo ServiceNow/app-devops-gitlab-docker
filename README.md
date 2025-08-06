@@ -1,4 +1,4 @@
-# app-devops-gitlab
+# app-devops-gitlab-docker
 
  New repository for developing a plugin to integrate between ITSM DevOps and GitLab pipelines
 
