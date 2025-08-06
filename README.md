@@ -2,7 +2,6 @@
 
  New repository for developing a plugin to integrate between ITSM DevOps and GitLab pipelines
 
-
 # CLI example using npm modules
 
 ## Build and install
