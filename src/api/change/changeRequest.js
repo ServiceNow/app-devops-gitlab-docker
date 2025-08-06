@@ -22,7 +22,6 @@ class ChangeRequestManager extends SnDevopsApi {
        }
      */
     async createChange(pipelineContext, changeAttrPayload) {
-        let status = true;
         let response;
         let changePayload; //Payload contains information necessary for change creation
         let changeDetails; //Incoming payload after JSON parsed
@@ -77,7 +76,22 @@ class ChangeRequestManager extends SnDevopsApi {
 
             let payload = this._getRequestBodyForChangeCreation(changePayload, pipelineContext);
             response = await this.createChangeNotification(payload);
-            if (status) {
+            if (response) {
+                var result = response.data.result;
+                if (result && result.pipelineTracked === 'false') {
+                    console.log("Change request cannot be created as pipeline is configured to NOT track in the servicenow instance");
+                    return;
+                }
+
+                if (result && result.status == "Success") {
+                    if (result.changeControl === false)
+                        console.log('\n     \x1b[1m\x1b[36m' + "Change control is not enabled on the pipeline stage" + '\x1b[0m\x1b[0m');
+                    else if (result.message)
+                        console.log('\n     \x1b[1m\x1b[36m' + result.message + '\x1b[0m\x1b[0m');
+                    else
+                        console.log('\n     \x1b[1m\x1b[36m' + "The job is under change control. A callback request is created and polling has been started to retrieve the change info." + '\x1b[0m\x1b[0m');
+                }
+
                 interval = interval >= 100 ? interval : 100;
                 timeout = timeout >= 100 ? timeout : 3600;
 
@@ -91,14 +105,12 @@ class ChangeRequestManager extends SnDevopsApi {
                 }
             }
         } catch (err) {
-            status = false;
             console.error('\n \x1b[1m\x1b[31m' + err.message + '\x1b[0m\x1b[0m');
             process.exit(1);
         }
     }
 
     async createChangeNotification(changePayload) {
-        let status = false;
         let response;
 
         try {
@@ -114,7 +126,6 @@ class ChangeRequestManager extends SnDevopsApi {
             let httpHeaders = { headers: defaultHeadersForToken };
             try {
                 response = await axios.post(url.toString(), JSON.stringify(changePayload), httpHeaders);
-                status = true;
             } catch (err) {
                 if (err.code === 'ECONNABORTED') {
                     throw new Error(`change creation timeout after ${err.config.timeout}s`);
@@ -163,18 +174,7 @@ class ChangeRequestManager extends SnDevopsApi {
                     throw new Error(errMsg);
                 }
             }
-
-            if (status) {
-                var result = response.data.result;
-                if (result && result.status == "Success") {
-                    if (result.changeControl === false)
-                        console.log('\n     \x1b[1m\x1b[36m' + "Change control is not enabled on the pipeline stage" + '\x1b[0m\x1b[0m');
-                    else if (result.message)
-                        console.log('\n     \x1b[1m\x1b[36m' + result.message + '\x1b[0m\x1b[0m');
-                    else
-                        console.log('\n     \x1b[1m\x1b[36m' + "The job is under change control. A callback request is created and polling has been started to retrieve the change info." + '\x1b[0m\x1b[0m');
-                }
-            }
+           return response;
         } catch (error) {
             throw new Error(error.message);
         }

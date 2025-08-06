@@ -1,7 +1,16 @@
-# app-devops-gitlab-docker
+# app-devops-gitlab
 
  New repository for developing a plugin to integrate between ITSM DevOps and GitLab pipelines
 
+### Owners
+
+> ramachandrarao.p
+
+### How to build on Jenkins
+* Create a `pom.xml` file at the root level
+* Go to the [BT1 Service Catalog](https://buildtools1.service-now.com/nav_to.do?uri=%2Fcom.glideapp.servicecatalog_cat_item_view.do%3Fv%3D1%26sysparm_id%3D9dbd0c54db1acb403a3d5dd5ce961948%26sysparm_link_parent%3Dad2fecb72bfc310052f7c71317da157e%26sysparm_catalog%3De0d08b13c3330100c8b837659bba8fb4%26sysparm_catalog_view%3Dess%26sysparm_view%3Dess) to request a Jenkins job
+
+Once the request is processed, a multi-branch job is created on https://buildmaster-hotel.devsnc.com and will build any branches that match [ServiceNow branch naming convention](https://buildtools1.service-now.com/kb_view_customer.do?sysparm_article=KB0528607).
 
 # CLI example using npm modules
 
@@ -56,11 +65,11 @@ npm unlink .
 ### Building Docker Image
 
 ```sh
-docker build -t servicenowdocker/sndevops:6.0.0 .
+docker build -t servicenowdocker/sndevops:6.1.0 .
 ```
 
 ```sh
-docker push servicenowdocker/sndevops:6.0.0
+docker push servicenowdocker/sndevops:6.1.0
 ```
 
 ## Integrating with GitLab
@@ -106,7 +115,7 @@ stages:
 
 package:
   stage: package
-  image: servicenowdocker/sndevops:6.0.0
+  image: servicenowdocker/sndevops:6.1.0
   script: 
     - sndevopscli create artifact -a '[{"name":"artifact-name","repositoryName":"artifact-repo-name" ,"version":"1.3.0"}]'
     - sndevopscli create package -n "package-name" -a '[{"name":"artifact-name","repositoryName":"artifact-repo-name" ,"version":"1.3.0"}]
@@ -118,7 +127,7 @@ stages:
 
 package:
   stage: package
-  image: servicenowdocker/sndevops:6.0.0
+  image: servicenowdocker/sndevops:6.1.0
   script: 
     - sndevopscli create artifact -u <servicenow-url> -t <tool-id> --token <tool-token> -a '[{"name":"artifact-name","repositoryName":"artifact-repo-name" ,"version":"1.3.0"}]'
     - sndevopscli create package -u <servicenow-url> -t <tool-id> --token <tool-token> -n "package-mame" -a '[{"name":"artifact-name","repositoryName":"artifact-repo-name" ,"version":"1.3.0"}]
@@ -142,7 +151,7 @@ stages:
 
 ServiceNow DevOps Change:
   stage: DevOpsChangeApproval
-  image: servicenowdocker/sndevops:6.0.0
+  image: servicenowdocker/sndevops:6.1.0
   script: 
     - sndevopscli create change -p '{"changeStepDetails":{"timeout":3600,"interval":100},"attributes":{"short_description":"Automated Software Deployment","description":"Automated Software Deployment.","assignment_group":"XXXXXXX","implementation_plan":"Software update is tested and results can be found in Test Summaries Tab.","backout_plan":"When software fails in production, the previous software release will be re-deployed.","test_plan":"Testing if the software was successfully deployed or not"}}'
 
@@ -182,7 +191,7 @@ stages:
 
 ServiceNow DevOps Sonar Scan Results:
   stage: DevOpsSonarStage
-  image: servicenowdocker/sndevops:6.0.0
+  image: servicenowdocker/sndevops:6.1.0
   script: 
     - sndevopscli create sonar -url 'https://sonarcloud.io' -projectKey 'xxxxxxx' -branch 'master'
 
@@ -207,7 +216,7 @@ stages:
 
 ServiceNow DevOps Security Scan Results:
   stage: DevOpsSecurityScanStage
-  image: servicenowdocker/sndevops:6.0.0
+  image: servicenowdocker/sndevops:6.1.0
   script: 
     - sndevopscli create securityScan -p "{\"pipelineInfo\":{\"buildNumber\":\"buildNumber\",\"pipelineExecutionUrl\":\"pipelineExecutionUrl\" },\"securityResultAttributes\":{ \"scanner\":\"Veracode\",\"applicationName\":\"PetStoreAPI-Github\",\"buildVersion\":\"\",\"securityToolId\":\"\"}}"
 
@@ -235,7 +244,7 @@ stages:
 
 ServiceNow DevOps Get Change:
   stage: DevOpsGetChange
-  image: servicenowdocker/sndevops:6.0.0
+  image: servicenowdocker/sndevops:6.1.0
   script: 
     - sndevopscli get change -p "{\"buildNumber\":\"buildNumber\",\"stageName\":\"ServiceNow DevOps Change Step\",\"pipelineName\":\"GitlabDockerGetAndUpdateChange\"}"
 
@@ -271,7 +280,7 @@ stages:
 
 ServiceNow DevOps Update Change:
   stage: DevOpsUpdateChangeStage
-  image: servicenowdocker/sndevops:6.0.0
+  image: servicenowdocker/sndevops:6.1.0
   script: 
     - sndevopscli update change -n 'CHGXXXXXX' -p "{\"short_description\":\"Automated Software Deployment\",\"description\":\"Automated Software Deployment.\",\"assignment_group\":\"XXXXX\",\"implementation_plan\":\"Software update is tested and results can be found in Test Summaries Tab.\",\"backout_plan\":\"When software fails in production, the previous software release will be re-deployed.\",\"test_plan\":\"Testing if the software was successfully deployed or not\"}"
 
@@ -298,7 +307,7 @@ stages:
 
 ServiceNow DevOps Change Step:
   stage: changeapproval
-  image: servicenowdocker/sndevops:6.0.0
+  image: servicenowdocker/sndevops:6.1.0
   script: 
      - sndevopscli create change -p "{\"changeStepDetails\":{\"timeout\":3600,\"interval\":100},\"autoCloseChange\":true,\"attributes\":{\"short_description\":\"Automated Software Deployment\",\"description\":\"Automated Software Deployment.\",\"assignment_group\":\"xxxxxxxx\",\"implementation_plan\":\"Software update is tested and results can be found in Test Summaries Tab.\",\"backout_plan\":\"When software fails in production, the previous software release will be re-deployed.\",\"test_plan\":\"Testing if the software was successfully deployed or not\"}}"
   
