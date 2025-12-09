@@ -57,12 +57,71 @@ class SndevopsApi {
         }
     }
 
+    _getProxyConfig() {
+        // Check if proxy is configured via environment variables
+        const proxyUrl = BaseEnv.PROXY_ENDPOINT;
+        const proxyUsername = BaseEnv.PROXY_USERNAME;
+        const proxyPassword = BaseEnv.PROXY_PASSWORD;
+        const proxyAuth = BaseEnv.PROXY_AUTH;
+
+        if (!proxyUrl) {
+            return null;
+        }
+        try {
+            const proxyUrlObj = new URL(proxyUrl);
+            const proxyConfig = {
+                host: proxyUrlObj.hostname,
+                port: proxyUrlObj.port || (proxyUrlObj.protocol === 'https:' ? 443 : 80),
+                protocol: proxyUrlObj.protocol.replace(':', '')
+            };
+
+            if (proxyAuth) {
+                proxyConfig.auth = {
+                    username: proxyAuth,
+                    password: ''
+                };
+                console.log(`Using proxy with API key authentication: ${proxyConfig.protocol}://${proxyConfig.host}:${proxyConfig.port}`);
+            } else if (proxyUsername) {
+                proxyConfig.auth = {
+                    username: proxyUsername,
+                    password: proxyPassword || ''
+                };
+                console.log(`Using proxy with username/password authentication: ${proxyConfig.protocol}://${proxyConfig.host}:${proxyConfig.port}`);
+            } else {
+                console.log(`Using proxy without authentication: ${proxyConfig.protocol}://${proxyConfig.host}:${proxyConfig.port}`);
+            }
+            return proxyConfig;
+        } catch (error) {
+            console.warn(`Invalid proxy URL: ${proxyUrl}. Proceeding without proxy.`);
+            return null;
+        }
+    }
+
+    /**
+     * Helper method to build axios config with headers and proxy support
+     * This centralizes the proxy configuration logic so subclasses don't need to duplicate it
+     * @param {Object} headers - Optional custom headers. If not provided, uses default auth headers
+     * @returns {Object} Axios config object with headers and proxy configuration
+     */
+    _getAxiosConfig(headers = null) {
+        const axiosConfig = {
+            headers: headers || this._getAuthHeaderWithToken()
+        };
+        
+        // Add proxy configuration if available
+        const proxyConfig = this._getProxyConfig();
+        if (proxyConfig) {
+            axiosConfig.proxy = proxyConfig;
+        }
+        
+        return axiosConfig;
+    }
+
 
       _postMethod(url, body, httpHeaders) {
-
           axios.post(url,
             JSON.stringify(body),
-            {headers:httpHeaders})
+            this._getAxiosConfig(httpHeaders))
             .then(function (response) {
                 console.log("Response of requet: " + new URL(url).pathname + " --->"  +JSON.stringify(response.data))
                 return Promise.resolve(response)

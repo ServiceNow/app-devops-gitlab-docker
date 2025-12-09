@@ -53,9 +53,8 @@ class UpdateChangeManager extends SnDevopsApi {
                 url = new URL(API_UPDATE_CHANGE_PATH, this.url);
                 url.searchParams.append("changeRequestNumber", changeRequestNumber);
                 console.log("Update change API = " + url.toString());
-
-                httpHeaders = { headers: this._getAuthHeaderWithToken() };    
-                response = await axios.put(url.toString(), JSON.stringify(changeDetailsParsed), httpHeaders);
+                
+                response = await axios.put(url.toString(), JSON.stringify(changeDetailsParsed), this._getAxiosConfig());
                 console.log("[ServiceNow DevOps], Receiving response for Update Change, Response : " + JSON.stringify(response.data));
                 
                 if(response.data && response.data.result){

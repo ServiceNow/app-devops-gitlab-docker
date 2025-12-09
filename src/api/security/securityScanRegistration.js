@@ -1,9 +1,13 @@
-const SnDevopsApi = require('../base/sndevopsApi.js')
+const SnDevopsApi = require('../base/sndevopsApi.js');
 const axios = require('axios');
 const API_SECURITY_PATH = 'api/sn_devops/devops/tool/security';
 const BaseEnv = require('../../common/baseEnv.js');
+const ToolHandlerRegistry = require('../../handler/registry');
 
-
+/**
+ * Manager for registering security scan results with ServiceNow DevOps.
+ * Handles payload construction and API communication in a tool-agnostic way.
+ */
 class SecurtyScanRegistrationManager extends SnDevopsApi {
 
     async createSecurityScan(inputPayload) {
@@ -16,7 +20,13 @@ class SecurtyScanRegistrationManager extends SnDevopsApi {
             } catch (e) {
                 throw new Error("Unable to parse Security scan payload");
             }
+        } else {
+            payload = {};
         }
+
+        const registry = new ToolHandlerRegistry();
+        const handler = registry.getToolHandler();
+        payload = handler ? handler.getSecurityScanPayload(payload) : payload;
 
         let endpoint = new URL(API_SECURITY_PATH, this.url);
         endpoint.searchParams.append("toolId", this.toolId)
@@ -29,10 +39,9 @@ class SecurtyScanRegistrationManager extends SnDevopsApi {
             'Accept': 'application/json',
             'Authorization': 'sn_devops.DevOpsToken ' + this.toolId + ":" + this.token
         };
-        let httpHeaders = { headers: defaultHeadersForToken };
 
         try {
-            response = await axios.post(endpoint.toString(), JSON.stringify(payload), httpHeaders);
+            response = await axios.post(endpoint.toString(), JSON.stringify(payload), this._getAxiosConfig(defaultHeadersForToken));
         } catch (e) {
             if (e.message.includes('ECONNREFUSED') || e.message.includes('ENOTFOUND') || e.message.includes('405')) {
                 console.error('ServiceNow Instance URL is NOT valid. Enter the correct the URL and try again.');

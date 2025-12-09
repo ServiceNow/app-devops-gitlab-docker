@@ -39,10 +39,9 @@ class SonarRegistrationManager extends SnDevopsApi {
             'Accept': 'application/json',
             'Authorization': 'sn_devops.DevOpsToken ' + this.toolId + ":" + this.token
         };
-        httpHeaders = { headers: defaultHeadersForToken };
 
         try {
-            response = await axios.post(endpoint.toString(), JSON.stringify(payload), httpHeaders);
+            response = await axios.post(endpoint.toString(), JSON.stringify(payload), this._getAxiosConfig(defaultHeadersForToken));
         } catch (e) {
             if (e.message.includes('ECONNREFUSED') || e.message.includes('ENOTFOUND') || e.message.includes('405')) {
                 console.error('ServiceNow Instance URL is NOT valid. Enter the correct the URL and try again.');

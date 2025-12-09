@@ -1,10 +1,12 @@
 const HarnessIntegrationHandler = require("./harness");
 const GithubIntegrationHandler = require("./github");
+const GitlabIntegrationHandler = require("./gitlab");
 
 class ToolHandlerRegistry {
     handlers = [];
 
     constructor() {
+        this.handlers.push(new GitlabIntegrationHandler());
         this.handlers.push(new HarnessIntegrationHandler());
         this.handlers.push(new GithubIntegrationHandler());
     }

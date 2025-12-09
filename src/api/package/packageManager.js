@@ -25,8 +25,7 @@ class PackageManager extends SnDevopsApi {
 
          try {
             payload = this._getRequestBodyForPackageRegistration(packageName, artifactJson)
-            httpHeaders = { headers: this._getAuthHeaderWithToken() };    
-            response = await axios.post(url.toString(), JSON.stringify(payload), httpHeaders);
+            response = await axios.post(url.toString(), JSON.stringify(payload), this._getAxiosConfig());
             console.log("Response of package registration request ->: " + new URL(url).pathname + " --->"  +JSON.stringify(response.data))
          } catch(e){
             if (e.message.includes('ECONNREFUSED') || e.message.includes('ENOTFOUND')) {

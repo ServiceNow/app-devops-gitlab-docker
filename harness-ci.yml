@@ -45,7 +45,7 @@ pipeline:
                   identifier: Sonar_container
                   spec:
                     connectorRef: docker_connector # harness docker connector
-                    image: servicenowdocker/sndevops:6.1.0
+                    image: servicenowdocker/sndevops:6.2.0
                     command: |-
                       export SNOW_URL="<+variable.SNOW_URL>"
                       export SNOW_TOOLID="<+variable.SNOW_TOOLID>"
@@ -93,7 +93,7 @@ pipeline:
                   identifier: security
                   spec:
                     connectorRef: docker_connector # harness docker connector
-                    image: servicenowdocker/sndevops:6.1.0
+                    image: servicenowdocker/sndevops:6.2.0
                     command: |-
                       export SNOW_URL="<+variable.SNOW_URL>"
                       export SNOW_TOOLID="<+variable.SNOW_TOOLID>"
@@ -156,7 +156,7 @@ pipeline:
                   identifier: ServiceNow_change
                   spec:
                     connectorRef: docker_connector # harness docker connector
-                    image: servicenowdocker/sndevops:6.1.0
+                    image: servicenowdocker/sndevops:6.2.0
                     command: |-
                       # set mandetory variables. These can be set from Environment variable section of Optional configuration as well.
                       export HARNESS_STAGE_NAME="<+stage.identifier>"
