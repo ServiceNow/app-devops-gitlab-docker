@@ -26,9 +26,7 @@ class ArtifactManager extends SnDevopsApi {
             
             try {
                 payload = this._getRequestBodyForArtifactRegistration(artifactJson);
-                let httpHeaders = { headers: this._getAuthHeaderWithToken() };    
-
-                response = await axios.post(url.toString(), JSON.stringify(payload), httpHeaders);
+                response = await axios.post(url.toString(), JSON.stringify(payload), this._getAxiosConfig());
             } catch(e){
                 if (e.message.includes('ECONNREFUSED') || e.message.includes('ENOTFOUND')) {
                     throw new Error('Artifact cannot be registered because the ServiceNow Instance URL is invalid. Enter the correct URL and try again.');

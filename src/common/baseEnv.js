@@ -21,6 +21,10 @@ module.exports = class BaseEnv{
         static SNOW_URL = process.env.SNOW_URL;
         static SNOW_TOKEN = process.env.SNOW_TOKEN;
         static SNOW_TOOLID = process.env.SNOW_TOOLID;
+        static PROXY_ENDPOINT = process.env.PROXY_ENDPOINT;
+        static PROXY_USERNAME = process.env.PROXY_USERNAME;
+        static PROXY_PASSWORD = process.env.PROXY_PASSWORD;
+        static PROXY_AUTH = process.env.PROXY_AUTH;
         static CI_DEFAULT_BRANCH = process.env.CI_DEFAULT_BRANCH || process.env.DEFAULT_BRANCH;
         static CI_MERGE_REQUEST_SOURCE_BRANCH_NAME = process.env.CI_MERGE_REQUEST_SOURCE_BRANCH_NAME || process.env.MERGE_REQUEST_SOURCE_BRANCH_NAME;
 

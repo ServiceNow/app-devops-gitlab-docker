@@ -17,7 +17,7 @@ class GetChangeManager extends SnDevopsApi {
    */
     async getChange(changeDetails) {
         let status = "NOT-STARTED";
-        let buildNumber;
+        let buildNumber, pipelineExecutionId;
         let stageName;
         let pipelineName;
         let url;
@@ -36,6 +36,7 @@ class GetChangeManager extends SnDevopsApi {
                 try {
                     changeDetailsParsed = JSON.parse(changeDetails);
                     buildNumber = changeDetailsParsed.buildNumber;
+                    pipelineExecutionId = changeDetailsParsed.pipelineExecutionId;
                     stageName = changeDetailsParsed.stageName;
                     pipelineName = changeDetailsParsed.pipelineName;
                     attemptNumber = changeDetailsParsed.attemptNumber
@@ -46,6 +47,7 @@ class GetChangeManager extends SnDevopsApi {
 
             try {
                 buildNumber = buildNumber || BaseEnv.CI_JOB_ID;
+                pipelineExecutionId = pipelineExecutionId || BaseEnv.CI_PIPELINE_ID;
                 stageName = stageName || BaseEnv.CI_JOB_NAME;
                 pipelineName = pipelineName || BaseEnv.CI_PROJECT_TITLE;
                 gitLabProjectId = BaseEnv.CI_PROJECT_ID;
@@ -55,6 +57,9 @@ class GetChangeManager extends SnDevopsApi {
 
                 url = new URL(API_GET_CHANGE_PATH, this.url);
                 url.searchParams.append("buildNumber", buildNumber);
+                if(pipelineExecutionId) {
+                     url.searchParams.append("pipelineExecutionId", pipelineExecutionId);
+                }
                 url.searchParams.append("stageName", stageName);
                 url.searchParams.append("pipelineName", this.buildPipelineName(pipelineName));
                 url.searchParams.append("toolId", this.toolId);
@@ -63,9 +68,8 @@ class GetChangeManager extends SnDevopsApi {
                 if(attemptNumber)
                     url.searchParams.append("attemptNumber", attemptNumber);
                 console.log("Get change API = " + url.toString());
-
-                httpHeaders = { headers: this._getAuthHeaderWithToken() };    
-                response = await axios.get(url.toString(), httpHeaders);
+                
+                response = await axios.get(url.toString(), this._getAxiosConfig());
                 console.log("[ServiceNow DevOps], Receiving response for Get Change, Response : " + JSON.stringify(response.data));
                 
                
@@ -74,6 +78,7 @@ class GetChangeManager extends SnDevopsApi {
                     console.log('\n \x1b[1m\x1b[32m' + "changeRequestNumber => " + response.data.result.number + '\x1b[0m\x1b[0m');
                     outputObject.changeRequestNumber = response.data.result.number;
                     outputObject.status = status;
+                    outputObject.changeDetails = response.data.result;
                     this._writeToOutputFile(outputObject);
                     return outputObject;
                 } else {

@@ -22,6 +22,10 @@ class AbstractToolIntegrationHandler {
   getProjectId () {}
 
   getPipelineName() {}
+
+  getSecurityScanPayload(payload = {}) {
+    return payload;
+  }
 }
 
 module.exports = AbstractToolIntegrationHandler

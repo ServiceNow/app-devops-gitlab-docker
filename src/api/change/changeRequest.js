@@ -37,22 +37,22 @@ class ChangeRequestManager extends SnDevopsApi {
                 "pipelineName": BaseEnv.CI_PROJECT_TITLE,
                 "jobName": BaseEnv.CI_JOB_NAME
             };
-            if(BaseEnv.CI_PROJECT_ID) {
+            if (BaseEnv.CI_PROJECT_ID) {
                 changePayload.projectId = BaseEnv.CI_PROJECT_ID;
             }
-            if(BaseEnv.CI_WORKFLOW_NAME) {
+            if (BaseEnv.CI_WORKFLOW_NAME) {
                 changePayload.workflow = BaseEnv.CI_WORKFLOW_NAME;
             }
-            if(BaseEnv.CI_RUN_ATTEMPT) {
+            if (BaseEnv.CI_RUN_ATTEMPT) {
                 changePayload.attemptNumber = BaseEnv.CI_RUN_ATTEMPT;
             }
-            if(BaseEnv.CI_REPOSITORY_NAME) {
+            if (BaseEnv.CI_REPOSITORY_NAME) {
                 changePayload.repository = BaseEnv.CI_REPOSITORY_NAME;
             }
-            if(BaseEnv.CI_PROJECT_PATH) {
+            if (BaseEnv.CI_PROJECT_PATH) {
                 changePayload.projectPath = BaseEnv.CI_PROJECT_PATH;
             }
-            if(BaseEnv.CI_API_V4_URL) {
+            if (BaseEnv.CI_API_V4_URL) {
                 changePayload.apiPath = BaseEnv.CI_API_V4_URL;
             }
 
@@ -77,6 +77,7 @@ class ChangeRequestManager extends SnDevopsApi {
             let payload = this._getRequestBodyForChangeCreation(changePayload, pipelineContext);
             response = await this.createChangeNotification(payload);
             if (response) {
+
                 var result = response.data.result;
                 if (result && result.pipelineTracked === 'false') {
                     console.log("Change request cannot be created as pipeline is configured to NOT track in the servicenow instance");
@@ -84,6 +85,10 @@ class ChangeRequestManager extends SnDevopsApi {
                 }
 
                 if (result && result.status == "Success") {
+                    if (payload.deploymentGateDetails && payload.deploymentGateDetails.jobName) {
+                        console.log('\n     \x1b[1m\x1b[36m' + "A callback request has been created for the deployment gate job: " + payload.deploymentGateDetails.jobName + '\x1b[0m\x1b[0m');
+                        return;
+                    }
                     if (result.changeControl === false)
                         console.log('\n     \x1b[1m\x1b[36m' + "Change control is not enabled on the pipeline stage" + '\x1b[0m\x1b[0m');
                     else if (result.message)
@@ -123,9 +128,9 @@ class ChangeRequestManager extends SnDevopsApi {
                 'Accept': 'application/json',
                 'Authorization': 'sn_devops.DevOpsToken ' + this.toolId + ":" + this.token
             };
-            let httpHeaders = { headers: defaultHeadersForToken };
+            
             try {
-                response = await axios.post(url.toString(), JSON.stringify(changePayload), httpHeaders);
+                response = await axios.post(url.toString(), JSON.stringify(changePayload), this._getAxiosConfig(defaultHeadersForToken));
             } catch (err) {
                 if (err.code === 'ECONNABORTED') {
                     throw new Error(`change creation timeout after ${err.config.timeout}s`);
@@ -174,7 +179,7 @@ class ChangeRequestManager extends SnDevopsApi {
                     throw new Error(errMsg);
                 }
             }
-           return response;
+            return response;
         } catch (error) {
             throw new Error(error.message);
         }
@@ -245,7 +250,7 @@ class ChangeRequestManager extends SnDevopsApi {
         url.searchParams.append("buildNumber", changePayload.jobId);
         url.searchParams.append("pipelineName", this.buildPipelineName(changePayload.pipelineName));
         url.searchParams.append("pipelineId", changePayload.gitLabProjectId);
-        if(changePayload.attemptNumber)
+        if (changePayload.attemptNumber)
             url.searchParams.append("attemptNumber", changePayload.attemptNumber);
 
         endpoint = url.toString();
@@ -254,10 +259,10 @@ class ChangeRequestManager extends SnDevopsApi {
             'Accept': 'application/json',
             'Authorization': 'sn_devops.DevOpsToken ' + this.toolId + ":" + this.token
         };
-        httpHeaders = { headers: defaultHeadersForToken };
+        
         console.log("Get change API = " + endpoint);
         try {
-            response = await axios.get(endpoint, httpHeaders);
+            response = await axios.get(endpoint, this._getAxiosConfig(defaultHeadersForToken));
             status = true;
         } catch (err) {
             if (!err.response) {
@@ -391,23 +396,26 @@ class ChangeRequestManager extends SnDevopsApi {
             "attemptNumber": changePayload.attemptNumber
         }
 
-        if(BaseEnv.CI_ORG_ID) {
+        if (BaseEnv.CI_ORG_ID) {
             payload.orgIdentifier = BaseEnv.CI_ORG_ID;
         }
 
-        if(changePayload.projectId) {
+        if (changePayload.projectId) {
             payload.gitLabProjectId = changePayload.projectId;
             payload.projectIdentifier = changePayload.projectId;
         }
 
-        if(pipelineContext) {
+        if (pipelineContext) {
             this.validateChangePayload(pipelineContext);
             let parsedChangeParams = JSON.parse(pipelineContext);
             for (var key in parsedChangeParams) {
-               if(parsedChangeParams.hasOwnProperty(key) && parsedChangeParams[key]) {
-                  payload[key] = parsedChangeParams[key];
-               }
+                if (parsedChangeParams.hasOwnProperty(key) && parsedChangeParams[key]) {
+                    payload[key] = parsedChangeParams[key];
+                }
             }
+        }
+        if (changePayload.changeRequestDetails && changePayload.changeRequestDetails.deploymentGateDetails && changePayload.changeRequestDetails.deploymentGateDetails.jobName) {
+            payload.deploymentGateDetails = changePayload.changeRequestDetails.deploymentGateDetails;
         }
         return payload;
     }
