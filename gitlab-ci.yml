@@ -1,4 +1,4 @@
-image: servicenowdocker/sndevops:6.2.0
+image: servicenowdocker/sndevops:6.2.1
 stages:
   - pre-build
   - build
