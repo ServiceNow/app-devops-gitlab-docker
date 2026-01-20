@@ -1,6 +1,7 @@
 
 const axios = require('axios');
 const url = require('node:url');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 require('dotenv').config();
 const BaseEnv = require('../../common/baseEnv')
 const ToolHandlerRegistry = require('../../handler/registry.js');
@@ -68,29 +69,25 @@ class SndevopsApi {
             return null;
         }
         try {
-            const proxyUrlObj = new URL(proxyUrl);
-            const proxyConfig = {
-                host: proxyUrlObj.hostname,
-                port: proxyUrlObj.port || (proxyUrlObj.protocol === 'https:' ? 443 : 80),
-                protocol: proxyUrlObj.protocol.replace(':', '')
-            };
-
+            // Build proxy URL with authentication if provided
+            let fullProxyUrl = proxyUrl;
+            
             if (proxyAuth) {
-                proxyConfig.auth = {
-                    username: proxyAuth,
-                    password: ''
-                };
-                console.log(`Using proxy with API key authentication: ${proxyConfig.protocol}://${proxyConfig.host}:${proxyConfig.port}`);
+                // If PROXY_AUTH is set, use it as the username with no password
+                const proxyUrlObj = new URL(proxyUrl);
+                fullProxyUrl = `${proxyUrlObj.protocol}//${proxyAuth}@${proxyUrlObj.host}`;
+                console.log(`Using proxy with API key authentication: ${proxyUrlObj.protocol}//${proxyUrlObj.host}`);
             } else if (proxyUsername) {
-                proxyConfig.auth = {
-                    username: proxyUsername,
-                    password: proxyPassword || ''
-                };
-                console.log(`Using proxy with username/password authentication: ${proxyConfig.protocol}://${proxyConfig.host}:${proxyConfig.port}`);
+                // If username/password are provided
+                const proxyUrlObj = new URL(proxyUrl);
+                const credentials = proxyPassword ? `${proxyUsername}:${proxyPassword}` : proxyUsername;
+                fullProxyUrl = `${proxyUrlObj.protocol}//${credentials}@${proxyUrlObj.host}`;
+                console.log(`Using proxy with username/password authentication: ${proxyUrlObj.protocol}//${proxyUrlObj.host}`);
             } else {
-                console.log(`Using proxy without authentication: ${proxyConfig.protocol}://${proxyConfig.host}:${proxyConfig.port}`);
+                console.log(`Using proxy without authentication: ${proxyUrl}`);
             }
-            return proxyConfig;
+            
+            return fullProxyUrl;
         } catch (error) {
             console.warn(`Invalid proxy URL: ${proxyUrl}. Proceeding without proxy.`);
             return null;
@@ -107,13 +104,15 @@ class SndevopsApi {
         const axiosConfig = {
             headers: headers || this._getAuthHeaderWithToken()
         };
-        
         // Add proxy configuration if available
-        const proxyConfig = this._getProxyConfig();
-        if (proxyConfig) {
-            axiosConfig.proxy = proxyConfig;
+        const proxyUrl = this._getProxyConfig();
+        if (proxyUrl) {
+            // Use HttpsProxyAgent for HTTPS endpoints through HTTP proxy
+            // This properly handles SSL tunneling via CONNECT method
+            axiosConfig.httpsAgent = new HttpsProxyAgent(proxyUrl);
+            // Set proxy to false to prevent axios from using its default proxy handling
+            axiosConfig.proxy = false;
         }
-        
         return axiosConfig;
     }
 
